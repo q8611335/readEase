@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ReadEase — Dyslexia-Friendly Text Tool</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=OpenDyslexic&display=swap" rel="stylesheet">
+  <style>
+    /* ── CSS Variables & Themes ── */
+    :root {
+      --bg: #fdf6ec;
+      --bg-soft: #fef9f3;
+      --surface: #ffffff;
+      --surface2: #fdf0e0;
+      --border: #e8d9c4;
+      --text: #2d2012;
+      --text-muted: #8a7560;
+      --accent: #c0661a;
+      --accent-soft: #f5e6d3;
+      --accent2: #4a8c6e;
+      --accent2-soft: #e3f0eb;
+      --long-sentence: #fff3cd;
+      --long-sentence-border: #ffc107;
+      --chunk-bg: #e8f4f8;
+      --chunk-border: #4a8c6e;
+      --highlight: #fffacd;
+      --font-body: 'Lexend', sans-serif;
+      --font-size: 17px;
+      --line-height: 1.8;
+      --letter-spacing: 0.03em;
+      --word-spacing: 0.1em;
+      --para-spacing: 1.5em;
+      --border-radius: 12px;
+      --shadow: 0 2px 12px rgba(45,32,18,0.08);
+      --shadow-lg: 0 8px 32px rgba(45,32,18,0.12);
+    }
+
+    /* Theme variations */
+    body.theme-cream { --bg: #fdf6ec; --bg-soft: #fef9f3; --surface: #ffffff; --surface2: #fdf0e0; --border: #e8d9c4; }
+    body.theme-blue  { --bg: #eef4fb; --bg-soft: #f5f9ff; --surface: #ffffff; --surface2: #ddeeff; --border: #c2d8f0; --text: #0d1f35; --text-muted: #4a6987; --accent: #2563eb; --accent-soft: #dbeafe; }
+    body.theme-green { --bg: #edf7f2; --bg-soft: #f3fbf6; --surface: #ffffff; --surface2: #d8f0e4; --border: #b8ddc9; --text: #0d2a1a; --text-muted: #3d7a58; --accent: #16a34a; --accent-soft: #dcfce7; }
+    body.theme-lavender { --bg: #f2effa; --bg-soft: #f7f5fd; --surface: #ffffff; --surface2: #e8e0f8; --border: #d0c4ee; --text: #1e1040; --text-muted: #6b5fa0; --accent: #7c3aed; --accent-soft: #ede9fe; }
+    body.theme-yellow { --bg: #fffbeb; --bg-soft: #fffdf5; --surface: #ffffff; --surface2: #fff3c2; --border: #fde68a; --text: #2a1f00; --text-muted: #927700; --accent: #d97706; --accent-soft: #fef3c7; }
+    body.theme-dark   { --bg: #1a1209; --bg-soft: #221808; --surface: #2d2012; --surface2: #3d2e1a; --border: #4a3a28; --text: #f5e6d0; --text-muted: #a08060; --accent: #f59e0b; --accent-soft: #3d2e1a; --shadow: 0 2px 12px rgba(0,0,0,0.4); }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      letter-spacing: var(--letter-spacing);
+      word-spacing: var(--word-spacing);
+      transition: background 0.3s, color 0.3s;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ── */
+    .app-wrapper {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      grid-template-rows: auto 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .app-header {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 28px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 22px; font-weight: 700;
+      font-family: 'Atkinson Hyperlegible', sans-serif;
+    }
+    .logo-text {
+      font-size: 22px; font-weight: 700; color: var(--accent);
+      font-family: 'Atkinson Hyperlegible', sans-serif;
+    }
+    .logo-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
+    .header-badge {
+      margin-left: auto;
+      background: var(--accent-soft);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .sidebar-section {
+      background: var(--bg-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--border-radius);
+      padding: 16px;
+    }
+
+    .sidebar-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Toggle Switches */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 10px;
+    }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle-label { font-size: 14px; font-weight: 500; flex: 1; }
+    .toggle-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    .toggle {
+      position: relative;
+      width: 42px; height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--border);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-slider::after {
+      content: '';
+      position: absolute;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: white;
+      top: 3px; left: 3px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--accent); }
+    .toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
+
+    /* Sliders */
+    .slider-row { padding: 8px 0; border-bottom: 1px solid var(--border); }
+    .slider-row:last-child { border-bottom: none; }
+    .slider-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .slider-label { font-size: 14px; font-weight: 500; }
+    .slider-val {
+      font-size: 12px; font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border-radius: 8px;
+      padding: 1px 8px;
+    }
+    input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Color swatches */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .color-swatch {
+      border-radius: 8px;
+      padding: 6px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .color-swatch:hover { transform: scale(1.05); }
+    .color-swatch.active { border-color: var(--accent); }
+
+    /* Font selector */
+    .font-grid { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+    .font-btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 13px;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+      color: var(--text);
+    }
+    .font-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .font-btn.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+    .font-btn .font-preview { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+
+    /* Preset buttons */
+    .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px; }
+    .preset-btn {
+      padding: 8px 6px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .preset-btn:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+    /* Reset btn */
+    .reset-btn {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.15s;
+    }
+    .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Main Content ── */
+    .main-content {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--font-body);
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { opacity: 0.9; color: white; }
+    .btn-icon { font-size: 15px; }
+
+    .toolbar-sep { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
+    .toolbar-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+
+    /* view mode buttons */
+    .view-toggle { display: flex; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .view-btn {
+      padding: 6px 14px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      transition: all 0.15s;
+    }
+    .view-btn:last-child { border-right: none; }
+    .view-btn.active { background: var(--accent); color: white; }
+
+    /* Content panels */
+    .panels {
+      display: grid;
+      overflow: hidden;
+      transition: grid-template-columns 0.3s;
+    }
+    .panels.split { grid-template-columns: 1fr 1fr; }
+    .panels.single { grid-template-columns: 1fr; }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+    }
+    .panel:last-child { border-right: none; }
+
+    .panel-header {
+      padding: 12px 20px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); }
+    .panel-badge {
+      font-size: 11px; font-weight: 600;
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    /* ── Input Area ── */
+    .input-area {
+      width: 100%;
+      min-height: 100%;
+      border: none;
+      outline: none;
+      background: transparent;
+      resize: none;
+      font-family: var(--font-body);
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      letter-spacing: var(--letter-spacing);
+      word-spacing: var(--word-spacing);
+      color: var(--text);
+    }
+    .input-area::placeholder { color: var(--text-muted); }
+
+    /* ── Output Area ── */
+    .output-area {
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      letter-spacing: var(--letter-spacing);
+      word-spacing: var(--word-spacing);
+      color: var(--text);
+    }
+
+    .segment {
+      display: inline;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .sentence-block {
+      display: block;
+      margin-bottom: var(--para-spacing);
+    }
+
+    .sentence-text {
+      display: inline;
+    }
+
+    .sentence-text.is-long {
+      background: var(--long-sentence);
+      border-bottom: 2px solid var(--long-sentence-border);
+      border-radius: 3px;
+      padding: 0 2px;
+    }
+
+    .chunk-block {
+      display: block;
+      margin-bottom: 10px;
+      padding: 8px 14px;
+      background: var(--chunk-bg);
+      border-left: 3px solid var(--chunk-border);
+      border-radius: 0 8px 8px 0;
+    }
+    .chunk-num {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--chunk-border);
+      display: block;
+      margin-bottom: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .chunk-group { margin-bottom: var(--para-spacing); }
+
+    /* Loading state */
+    .processing-indicator {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .processing-indicator.visible { display: flex; }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid var(--accent-soft);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Stats bar */
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 10px 20px;
+      background: var(--surface2);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .stat-item { display: flex; align-items: center; gap: 5px; }
+    .stat-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+    .stat-val { font-size: 13px; font-weight: 700; color: var(--text); }
+    .stat-arrow { font-size: 11px; }
+    .stat-arrow.up { color: #16a34a; }
+    .stat-arrow.down { color: #dc2626; }
+
+    /* Readability score badge */
+    .score-badge {
+      padding: 2px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .score-easy { background: #dcfce7; color: #16a34a; }
+    .score-medium { background: #fef3c7; color: #d97706; }
+    .score-hard { background: #fee2e2; color: #dc2626; }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      gap: 10px;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 40px; opacity: 0.4; }
+    .empty-text { font-size: 14px; }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 8px 20px;
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+    .legend-long { background: var(--long-sentence); border: 1.5px solid var(--long-sentence-border); }
+    .legend-chunk { background: var(--chunk-bg); border-left: 3px solid var(--chunk-border); width: 14px; }
+
+    /* Sample texts */
+    .sample-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .sample-btn {
+      padding: 5px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      transition: all 0.15s;
+    }
+    .sample-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Word highlighting on hover */
+    .output-area .sentence-text:not(.is-long) { cursor: default; }
+    .highlight-words .output-area .word { display: inline-block; border-radius: 2px; }
+    .highlight-words .output-area .word:hover { background: var(--highlight); }
+
+    /* Focus mode */
+    body.focus-mode .sidebar { display: none; }
+    body.focus-mode .app-wrapper { grid-template-columns: 1fr; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .app-wrapper { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .panels.split { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="theme-cream">
+<div class="app-wrapper">
+  <!-- Header -->
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-icon">R</div>
+      <div>
+        <div class="logo-text">ReadEase</div>
+        <div class="logo-sub">Dyslexia-Friendly Text Tool</div>
+      </div>
+    </div>
+    <div class="header-badge">♿ Accessibility Tool</div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- Presets -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">⚡ Quick Presets</div>
+      <div class="preset-grid">
+        <button class="preset-btn" onclick="applyPreset('mild')">Mild Support</button>
+        <button class="preset-btn" onclick="applyPreset('moderate')">Moderate</button>
+        <button class="preset-btn" onclick="applyPreset('strong')">Strong Support</button>
+        <button class="preset-btn" onclick="applyPreset('presentation')">Present Mode</button>
+      </div>
+    </div>
+
+    <!-- Text Processing -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">🧠 Text Processing</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Simplify Words</div>
+          <div class="toggle-desc">Replace complex vocabulary</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-simplify" onchange="scheduleProcess()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Break Long Sentences</div>
+          <div class="toggle-desc">Split sentences into chunks</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-chunk" onchange="scheduleProcess()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="slider-row" id="chunk-size-row" style="display:none">
+        <div class="slider-header">
+          <span class="slider-label">Chunk Size</span>
+          <span class="slider-val" id="val-chunk-size">15 words</span>
+        </div>
+        <input type="range" id="slider-chunk-size" min="8" max="25" value="15"
+               oninput="document.getElementById('val-chunk-size').textContent=this.value+' words'; scheduleProcess()">
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">✏️ Typography</div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Font Size</span>
+          <span class="slider-val" id="val-font-size">17px</span>
+        </div>
+        <input type="range" id="slider-font-size" min="13" max="28" value="17"
+               oninput="applyFontSize(this.value)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Line Height</span>
+          <span class="slider-val" id="val-line-height">1.8</span>
+        </div>
+        <input type="range" id="slider-line-height" min="12" max="30" value="18"
+               oninput="applyLineHeight(this.value)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Letter Spacing</span>
+          <span class="slider-val" id="val-letter-spacing">0.03em</span>
+        </div>
+        <input type="range" id="slider-letter-spacing" min="0" max="15" value="3"
+               oninput="applyLetterSpacing(this.value)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Word Spacing</span>
+          <span class="slider-val" id="val-word-spacing">0.1em</span>
+        </div>
+        <input type="range" id="slider-word-spacing" min="0" max="20" value="1"
+               oninput="applyWordSpacing(this.value)">
+      </div>
+      <div class="slider-row">
+        <div class="slider-header">
+          <span class="slider-label">Paragraph Gap</span>
+          <span class="slider-val" id="val-para-spacing">1.5em</span>
+        </div>
+        <input type="range" id="slider-para-spacing" min="5" max="40" value="15"
+               oninput="applyParaSpacing(this.value)">
+      </div>
+    </div>
+
+    <!-- Font Family -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">🔤 Font Family</div>
+      <div class="font-grid">
+        <button class="font-btn active" onclick="applyFont('Lexend', this)">
+          Lexend
+          <div class="font-preview" style="font-family:'Lexend'">Aa Bb Cc 123</div>
+        </button>
+        <button class="font-btn" onclick="applyFont('Atkinson Hyperlegible', this)">
+          Atkinson Hyperlegible
+          <div class="font-preview" style="font-family:'Atkinson Hyperlegible'">Aa Bb Cc 123</div>
+        </button>
+        <button class="font-btn" onclick="applyFont('OpenDyslexic', this)">
+          OpenDyslexic
+          <div class="font-preview" style="font-family:'OpenDyslexic'">Aa Bb Cc 123</div>
+        </button>
+        <button class="font-btn" onclick="applyFont('Georgia, serif', this)">
+          Georgia (Serif)
+          <div class="font-preview" style="font-family:Georgia,serif">Aa Bb Cc 123</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Background -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">🎨 Background Theme</div>
+      <div class="color-grid">
+        <div class="color-swatch active" style="background:#fdf6ec;color:#8a7560" onclick="applyTheme('cream',this)">Cream</div>
+        <div class="color-swatch" style="background:#eef4fb;color:#4a6987" onclick="applyTheme('blue',this)">Sky Blue</div>
+        <div class="color-swatch" style="background:#edf7f2;color:#3d7a58" onclick="applyTheme('green',this)">Mint</div>
+        <div class="color-swatch" style="background:#f2effa;color:#6b5fa0" onclick="applyTheme('lavender',this)">Lavender</div>
+        <div class="color-swatch" style="background:#fffbeb;color:#927700" onclick="applyTheme('yellow',this)">Warm Yellow</div>
+        <div class="color-swatch" style="background:#2d2012;color:#f5e6d0" onclick="applyTheme('dark',this)">Dark</div>
+      </div>
+    </div>
+
+    <!-- Readability options -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">👁️ Readability</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Highlight Long Sentences</div>
+          <div class="toggle-desc">Sentences over 20 words</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-highlight" checked onchange="scheduleProcess()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Sentence Spacing</div>
+          <div class="toggle-desc">Extra gap between sentences</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-sentence-spacing" onchange="scheduleProcess()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Bold First Word</div>
+          <div class="toggle-desc">Anchor focus at sentence start</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggle-bold-first" onchange="scheduleProcess()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetAll()">↺ Reset All Settings</button>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main-content">
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <span class="toolbar-label">LOAD SAMPLE:</span>
+      <div class="sample-grid">
+        <button class="sample-btn" onclick="loadSample('news')">📰 News Article</button>
+        <button class="sample-btn" onclick="loadSample('medical')">🏥 Medical Info</button>
+        <button class="sample-btn" onclick="loadSample('legal')">⚖️ Legal Text</button>
+        <button class="sample-btn" onclick="loadSample('instructions')">📋 Instructions</button>
+      </div>
+      <div class="toolbar-sep"></div>
+      <button class="btn btn-primary" onclick="processText()">
+        <span class="btn-icon">✨</span> Process Text
+      </button>
+      <button class="btn" onclick="clearAll()"><span class="btn-icon">🗑</span> Clear</button>
+      <div class="processing-indicator" id="processing-indicator">
+        <div class="spinner"></div> Processing…
+      </div>
+      <div class="toolbar-sep"></div>
+      <span class="toolbar-label">VIEW:</span>
+      <div class="view-toggle">
+        <button class="view-btn active" onclick="setView('split', this)">Split</button>
+        <button class="view-btn" onclick="setView('original', this)">Original</button>
+        <button class="view-btn" onclick="setView('enhanced', this)">Enhanced</button>
+      </div>
+    </div>
+
+    <!-- Panels -->
+    <div class="panels split" id="panels">
+      <!-- Original -->
+      <div class="panel" id="panel-original">
+        <div class="panel-header">
+          <span class="panel-title">📄 Original Text</span>
+          <span class="panel-badge" id="orig-word-count">0 words</span>
+        </div>
+        <div class="panel-body">
+          <textarea class="input-area" id="input-text"
+            placeholder="Paste or type your text here… or load a sample from the toolbar above.
+The enhanced version will appear on the right as you type."
+            oninput="onTextInput()"
+          ></textarea>
+        </div>
+        <div class="stats-bar" id="orig-stats-bar">
+          <div class="stat-item">
+            <span class="stat-label">Words</span>
+            <span class="stat-val" id="orig-words">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Sentences</span>
+            <span class="stat-val" id="orig-sentences">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Avg Length</span>
+            <span class="stat-val" id="orig-avg-len">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Readability</span>
+            <span class="stat-val" id="orig-readability">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enhanced -->
+      <div class="panel" id="panel-enhanced">
+        <div class="panel-header">
+          <span class="panel-title">✨ Enhanced Text</span>
+          <span class="panel-badge" id="enh-badge">Ready</span>
+        </div>
+        <div class="legend" id="legend-bar">
+          <div class="legend-item">
+            <div class="legend-swatch legend-long"></div>
+            <span>Long sentence (20+ words)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-swatch legend-chunk"></div>
+            <span>Chunked segment</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="output-area" id="output-area">
+            <div class="empty-state">
+              <div class="empty-icon">✨</div>
+              <div class="empty-text">Your enhanced text will appear here</div>
+            </div>
+          </div>
+        </div>
+        <div class="stats-bar" id="enh-stats-bar">
+          <div class="stat-item">
+            <span class="stat-label">Words</span>
+            <span class="stat-val" id="enh-words">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Long Sentences</span>
+            <span class="stat-val" id="enh-long-sentences">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Avg Length</span>
+            <span class="stat-val" id="enh-avg-len">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Readability</span>
+            <span class="stat-val" id="enh-readability">—</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Improvement</span>
+            <span class="stat-val" id="enh-improvement">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── Sample Texts ──
+const SAMPLES = {
+  news: `Scientists have recently discovered that a previously unknown species of deep-sea fish, which was subsequently named Bathypelagius luminarius, demonstrates extraordinarily remarkable bioluminescent capabilities that significantly surpass those of all other previously documented deep-ocean organisms. The researchers, who endeavored to comprehend the mechanism behind this phenomenon, concluded that the fish utilizes a highly sophisticated biochemical process to facilitate communication with potential mates across considerable distances in the perpetually dark ocean depths. Furthermore, the implications of this discovery are potentially enormous for our understanding of evolutionary biology and the remarkable adaptations that organisms develop in response to extreme environmental conditions. The team will subsequently publish their comprehensive findings in the prestigious journal Nature, which will provide additional details regarding the methodology they employed to observe and document these fascinating creatures in their natural habitat.`,
+
+  medical: `Hypertension, frequently referred to as elevated blood pressure, is a chronic medical condition in which the arterial blood pressure remains persistently elevated beyond normal parameters. This condition is particularly concerning because it significantly increases the likelihood of experiencing serious cardiovascular complications, including myocardial infarction and cerebrovascular accident, commonly referred to as heart attack and stroke respectively. Patients who have been diagnosed with hypertension are strongly advised to implement comprehensive lifestyle modifications, including the adoption of a nutritionally balanced dietary regimen that substantially reduces sodium consumption, the commencement of a regular physical exercise program, and the complete cessation of tobacco utilization. Additionally, healthcare professionals may subsequently prescribe antihypertensive pharmaceutical agents if lifestyle modifications prove insufficient to adequately control blood pressure levels.`,
+
+  legal: `The undersigned parties hereby acknowledge and agree that this contractual agreement constitutes a legally binding obligation between all signatories and their respective successors, assigns, heirs, and legal representatives. Any party seeking to terminate this agreement must provide written notification to all other parties no fewer than thirty calendar days prior to the intended termination date, during which period the terminating party shall remain responsible for fulfilling all contractual obligations that were established prior to the notification of termination. Furthermore, any disputes arising from the interpretation, implementation, or alleged breach of this agreement shall be submitted to binding arbitration in accordance with the applicable rules and procedures of the American Arbitration Association, and the arbitrator's determination shall be considered final and not subject to appeal in any court of competent jurisdiction.`,
+
+  instructions: `In order to successfully configure your newly acquired wireless networking device, you should initially verify that all components referenced in the accompanying documentation are present in the packaging. Subsequently, you should connect the provided power adapter to the rear of the device and insert the opposite end into an appropriate electrical outlet, after which the device will automatically commence its initialization sequence, which will be indicated by a series of illuminated status indicators on the front panel. Once initialization is complete, you should endeavor to locate the wireless network that corresponds to the name printed on the label affixed to the underside of the device, and upon successfully connecting to this network, you should proceed to open a web browser and navigate to the address 192.168.1.1 to access the device configuration interface.`
+};
+
+// ── State ──
+let currentView = 'split';
+let processTimer = null;
+let lastResult = null;
+
+// ── Toggle chunk size row ──
+document.getElementById('toggle-chunk').addEventListener('change', function() {
+  document.getElementById('chunk-size-row').style.display = this.checked ? 'block' : 'none';
+});
+
+// ── Font helpers ──
+function applyFontSize(v) {
+  document.documentElement.style.setProperty('--font-size', v + 'px');
+  document.getElementById('val-font-size').textContent = v + 'px';
+  document.getElementById('slider-font-size').value = v;
+}
+function applyLineHeight(v) {
+  const val = (v / 10).toFixed(1);
+  document.documentElement.style.setProperty('--line-height', val);
+  document.getElementById('val-line-height').textContent = val;
+}
+function applyLetterSpacing(v) {
+  const val = (v / 100).toFixed(2) + 'em';
+  document.documentElement.style.setProperty('--letter-spacing', val);
+  document.getElementById('val-letter-spacing').textContent = val;
+}
+function applyWordSpacing(v) {
+  const val = (v / 10).toFixed(1) + 'em';
+  document.documentElement.style.setProperty('--word-spacing', val);
+  document.getElementById('val-word-spacing').textContent = val;
+}
+function applyParaSpacing(v) {
+  const val = (v / 10).toFixed(1) + 'em';
+  document.documentElement.style.setProperty('--para-spacing', val);
+  document.getElementById('val-para-spacing').textContent = val;
+}
+function applyFont(font, btn) {
+  document.documentElement.style.setProperty('--font-body', `'${font}', sans-serif`);
+  document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function applyTheme(theme, el) {
+  document.body.className = document.body.className.replace(/theme-\w+/, '');
+  document.body.classList.add('theme-' + theme);
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── Presets ──
+function applyPreset(preset) {
+  const presets = {
+    mild: { fontSize: 17, lineHeight: 18, letterSpacing: 3, wordSpacing: 1, paraSpacing: 15, font: 'Lexend', theme: 'cream', simplify: false, chunk: false, highlight: true, boldFirst: false },
+    moderate: { fontSize: 19, lineHeight: 21, letterSpacing: 5, wordSpacing: 3, paraSpacing: 20, font: 'Atkinson Hyperlegible', theme: 'blue', simplify: true, chunk: false, highlight: true, boldFirst: true },
+    strong: { fontSize: 22, lineHeight: 26, letterSpacing: 8, wordSpacing: 5, paraSpacing: 30, font: 'OpenDyslexic', theme: 'yellow', simplify: true, chunk: true, highlight: true, boldFirst: true },
+    presentation: { fontSize: 24, lineHeight: 28, letterSpacing: 6, wordSpacing: 4, paraSpacing: 35, font: 'Lexend', theme: 'lavender', simplify: true, chunk: true, highlight: false, boldFirst: false },
+  };
+  const p = presets[preset];
+  if (!p) return;
+
+  // Apply sliders
+  document.getElementById('slider-font-size').value = p.fontSize; applyFontSize(p.fontSize);
+  document.getElementById('slider-line-height').value = p.lineHeight; applyLineHeight(p.lineHeight);
+  document.getElementById('slider-letter-spacing').value = p.letterSpacing; applyLetterSpacing(p.letterSpacing);
+  document.getElementById('slider-word-spacing').value = p.wordSpacing; applyWordSpacing(p.wordSpacing);
+  document.getElementById('slider-para-spacing').value = p.paraSpacing; applyParaSpacing(p.paraSpacing);
+
+  // Apply toggles
+  document.getElementById('toggle-simplify').checked = p.simplify;
+  document.getElementById('toggle-chunk').checked = p.chunk;
+  document.getElementById('toggle-highlight').checked = p.highlight;
+  document.getElementById('toggle-bold-first').checked = p.boldFirst;
+  document.getElementById('chunk-size-row').style.display = p.chunk ? 'block' : 'none';
+
+  // Apply font
+  const fontBtns = document.querySelectorAll('.font-btn');
+  fontBtns.forEach(b => {
+    if (b.textContent.trim().startsWith(p.font.split(',')[0])) {
+      applyFont(p.font, b);
+    }
+  });
+
+  // Apply theme
+  const swatches = document.querySelectorAll('.color-swatch');
+  swatches.forEach(s => {
+    if (s.getAttribute('onclick') && s.getAttribute('onclick').includes(p.theme)) {
+      applyTheme(p.theme, s);
+    }
+  });
+
+  scheduleProcess();
+}
+
+// ── Reset ──
+function resetAll() {
+  applyPreset('mild');
+}
+
+// ── View switching ──
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const panels = document.getElementById('panels');
+  const panelOrig = document.getElementById('panel-original');
+  const panelEnh = document.getElementById('panel-enhanced');
+
+  if (view === 'split') {
+    panels.className = 'panels split';
+    panelOrig.style.display = '';
+    panelEnh.style.display = '';
+  } else if (view === 'original') {
+    panels.className = 'panels single';
+    panelOrig.style.display = '';
+    panelEnh.style.display = 'none';
+  } else {
+    panels.className = 'panels single';
+    panelOrig.style.display = 'none';
+    panelEnh.style.display = '';
+  }
+}
+
+// ── Sample loading ──
+function loadSample(key) {
+  document.getElementById('input-text').value = SAMPLES[key] || '';
+  onTextInput();
+}
+
+// ── Clear ──
+function clearAll() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('output-area').innerHTML = '<div class="empty-state"><div class="empty-icon">✨</div><div class="empty-text">Your enhanced text will appear here</div></div>';
+  updateOrigStats('', null);
+  updateEnhStats(null, null);
+}
+
+// ── Text input handler ──
+function onTextInput() {
+  const text = document.getElementById('input-text').value;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  document.getElementById('orig-word-count').textContent = words + ' words';
+  scheduleProcess();
+}
+
+function scheduleProcess() {
+  clearTimeout(processTimer);
+  processTimer = setTimeout(processText, 400);
+}
+
+// ── Main process function ──
+async function processText() {
+  const text = document.getElementById('input-text').value;
+  if (!text.trim()) return;
+
+  const indicator = document.getElementById('processing-indicator');
+  indicator.classList.add('visible');
+
+  const options = {
+    simplify_words: document.getElementById('toggle-simplify').checked,
+    chunk_sentences: document.getElementById('toggle-chunk').checked,
+    chunk_size: document.getElementById('slider-chunk-size').value,
+    highlight_long: document.getElementById('toggle-highlight').checked,
+    bold_first: document.getElementById('toggle-bold-first').checked,
+  };
+
+  try {
+    const resp = await fetch('/process', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text, options})
+    });
+    const data = await resp.json();
+    lastResult = data;
+    renderOutput(data, options);
+    updateOrigStats(text, data.original_stats);
+    updateEnhStats(data.stats, data.original_stats);
+  } catch(e) {
+    console.error(e);
+  } finally {
+    indicator.classList.remove('visible');
+  }
+}
+
+// ── Render output ──
+function renderOutput(data, options) {
+  const container = document.getElementById('output-area');
+
+  if (!data.segments || data.segments.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">✨</div><div class="empty-text">Your enhanced text will appear here</div></div>';
+    return;
+  }
+
+  let html = '';
+  let chunkGroupOpen = false;
+  let prevWasChunk = false;
+
+  for (let i = 0; i < data.segments.length; i++) {
+    const seg = data.segments[i];
+    const isChunk = seg.type === 'chunk';
+    const nextSeg = data.segments[i + 1];
+    const nextIsChunk = nextSeg && nextSeg.type === 'chunk' && nextSeg.chunk_index > 0;
+
+    if (isChunk) {
+      if (!prevWasChunk) {
+        html += '<div class="chunk-group">';
+      }
+      const isFirstChunk = seg.chunk_index === 0;
+      html += `<div class="chunk-block">`;
+      if (seg.total_chunks > 1) {
+        html += `<span class="chunk-num">Part ${seg.chunk_index + 1} of ${seg.total_chunks}</span>`;
+      }
+      html += renderSegmentText(seg.text, options);
+      html += `</div>`;
+      if (!nextIsChunk) {
+        html += '</div>';
+      }
+    } else {
+      const longClass = (options.highlight_long && seg.is_long) ? ' is-long' : '';
+      html += `<div class="sentence-block"><span class="sentence-text${longClass}">${renderSegmentText(seg.text, options)}</span></div>`;
+    }
+
+    prevWasChunk = isChunk;
+  }
+
+  container.innerHTML = html;
+
+  // Update badge
+  const badge = document.getElementById('enh-badge');
+  const longCount = data.segments.filter(s => s.is_long).length;
+  badge.textContent = longCount > 0 ? `${longCount} long sentences` : 'Optimized ✓';
+  badge.style.background = longCount > 0 ? '#fff3cd' : 'var(--accent2-soft)';
+  badge.style.color = longCount > 0 ? '#856404' : 'var(--accent2)';
+}
+
+function renderSegmentText(text, options) {
+  let out = text;
+  if (options.bold_first) {
+    // Bold first word
+    out = out.replace(/^(\S+)/, '<strong>$1</strong>');
+  }
+  return out;
+}
+
+// ── Stats helpers ──
+function scoreClass(score) {
+  if (score >= 60) return 'score-easy';
+  if (score >= 30) return 'score-medium';
+  return 'score-hard';
+}
+function scoreLabel(score) {
+  if (score >= 60) return 'Easy';
+  if (score >= 30) return 'Moderate';
+  return 'Difficult';
+}
+
+function updateOrigStats(text, stats) {
+  if (!stats) {
+    ['orig-words','orig-sentences','orig-avg-len','orig-readability'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    return;
+  }
+  document.getElementById('orig-words').textContent = stats.word_count || 0;
+  document.getElementById('orig-sentences').textContent = stats.sentence_count || 0;
+  document.getElementById('orig-avg-len').textContent = (stats.avg_sentence_length || 0) + 'w';
+  const sc = stats.readability_score || 0;
+  document.getElementById('orig-readability').innerHTML = `<span class="score-badge ${scoreClass(sc)}">${scoreLabel(sc)} (${sc})</span>`;
+}
+
+function updateEnhStats(stats, origStats) {
+  if (!stats) {
+    ['enh-words','enh-long-sentences','enh-avg-len','enh-readability','enh-improvement'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    return;
+  }
+  document.getElementById('enh-words').textContent = stats.word_count || 0;
+  document.getElementById('enh-long-sentences').textContent = stats.long_sentence_count || 0;
+  document.getElementById('enh-avg-len').textContent = (stats.avg_sentence_length || 0) + 'w';
+  const sc = stats.readability_score || 0;
+  document.getElementById('enh-readability').innerHTML = `<span class="score-badge ${scoreClass(sc)}">${scoreLabel(sc)} (${sc})</span>`;
+
+  if (origStats) {
+    const diff = sc - (origStats.readability_score || 0);
+    const el = document.getElementById('enh-improvement');
+    if (diff > 0) {
+      el.innerHTML = `<span style="color:#16a34a">▲ +${diff.toFixed(1)}</span>`;
+    } else if (diff < 0) {
+      el.innerHTML = `<span style="color:#dc2626">▼ ${diff.toFixed(1)}</span>`;
+    } else {
+      el.textContent = '= 0';
+    }
+  }
+}
+
+// ── Auto-load sample on start ──
+window.addEventListener('load', () => {
+  loadSample('news');
+});
+</script>
+</body>
+</html>
